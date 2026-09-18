@@ -23,6 +23,7 @@ import com.saas.automotriz.request.PlanPaymentRequest;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -38,6 +39,12 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/payments")
+@ConditionalOnProperty(
+        name = "mercadopago.enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
+
 public class MercadoPagoController {
 
     private static final String PLAN_REFERENCE_PREFIX = "PLAN:";
