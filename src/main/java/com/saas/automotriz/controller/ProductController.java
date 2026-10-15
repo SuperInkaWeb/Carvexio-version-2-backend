@@ -193,6 +193,7 @@ public class ProductController {
         dto.setCategory(p.getCategory());
         dto.setBrand(p.getBrand());
         dto.setPhotoUrl(p.getPhotoUrl());
+        dto.setBusinessId(p.getBusiness().getId());
         dto.setBusinessName(p.getBusiness().getName());
         dto.setIgv(p.getIgv());
         dto.setDeliveryAvailable(Boolean.TRUE.equals(p.getDeliveryAvailable()));
