@@ -12,6 +12,7 @@ public class ProductDTO {
     private String category;
     private String brand;
     private String photoUrl;
+    private Long businessId;
     private String businessName;
     private String supplier;
     private Boolean igv;

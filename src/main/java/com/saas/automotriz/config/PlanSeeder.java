@@ -29,13 +29,13 @@ public class PlanSeeder implements CommandLineRunner {
                 plan("Arranque", "Mecanicos independientes y micro-talleres. Incluye hasta 1 usuario, 1 local, 5 productos y 5 servicios.",
                         0.0, 0.0, true, false, false, false, false),
                 plan("Taller Pro", "Talleres pequenos y medianos. Incluye hasta 5 usuarios, 1 local, 100 productos y 50 servicios.",
-                        2.0, 0.0, true, true, true, true, true),
+                        149.0, 0.0, true, true, true, true, true),
                 plan("Lubricentro & Grifo", "Lubricentros y centros de cambio rapido. Incluye hasta 5 usuarios, 1 local, 200 productos y 50 servicios.",
-                        2.0, 0.0, true, true, true, true, true),
+                        199.0, 0.0, true, true, true, true, true),
                 plan("Multi-Sucursal", "Cadenas de talleres o grifos con 2+ locales. Incluye hasta 10 usuarios, 5 locales, 500 productos y 100 servicios.",
-                        2.0, 0.0, true, true, true, true, true),
+                        349.0, 0.0, true, true, true, true, true),
                 plan("Enterprise / Flotas", "Cadenas grandes, distribuidores y aliados estrategicos. Usuarios, locales, productos y servicios ilimitados.",
-                        2.0, 0.0, true, true, true, true, true)
+                        699.0, 0.0, true, true, true, true, true)
         );
 
         Map<String, Plan> existing = planRepository.findAll().stream()
