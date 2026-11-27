@@ -3,6 +3,7 @@ package com.saas.automotriz.controller;
 import com.saas.automotriz.dto.ProductDTO;
 import com.saas.automotriz.request.ProductRequest;
 import com.saas.automotriz.model.Business;
+import com.saas.automotriz.model.Branch;
 import com.saas.automotriz.model.Product;
 import com.saas.automotriz.model.User;
 import com.saas.automotriz.repository.BranchRepository;
@@ -54,9 +55,7 @@ public class ProductController {
         planLimitService.checkProductLimit(business, productRepository.countByBusinessAndActiveTrue(business), 1);
         Product product = new Product();
         product.setBusiness(business);
-        if (request.getLocalId() != null) {
-            branchRepository.findById(request.getLocalId()).ifPresent(product::setBranch);
-        }
+        product.setBranch(resolveOwnedBranch(request.getLocalId(), business));
         applyRequest(product, request);
         return ResponseEntity.ok(toDTO(productRepository.save(product)));
     }
@@ -71,9 +70,7 @@ public class ProductController {
         List<Product> products = requests.stream().map(request -> {
             Product product = new Product();
             product.setBusiness(business);
-            if (request.getLocalId() != null) {
-                branchRepository.findById(request.getLocalId()).ifPresent(product::setBranch);
-            }
+            product.setBranch(resolveOwnedBranch(request.getLocalId(), business));
             applyRequest(product, request);
             return product;
         }).toList();
@@ -94,7 +91,7 @@ public class ProductController {
         }
 
         if (request.getLocalId() != null) {
-            branchRepository.findById(request.getLocalId()).ifPresent(product::setBranch);
+            product.setBranch(resolveOwnedBranch(request.getLocalId(), product.getBusiness()));
         }
         applyRequest(product, request);
         return ResponseEntity.ok(toDTO(productRepository.save(product)));
@@ -170,6 +167,15 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+
+    // Resuelve la sucursal solo si pertenece al negocio; evita asignar el producto
+    // a una sucursal ajena (ID-009). Devuelve null si no corresponde o no existe.
+    private Branch resolveOwnedBranch(Long localId, Business business) {
+        if (localId == null) return null;
+        return branchRepository.findById(localId)
+                .filter(b -> b.getBusiness().getId().equals(business.getId()))
+                .orElse(null);
+    }
 
     private void applyRequest(Product product, ProductRequest r) {
         if (r.getName() != null) product.setName(r.getName());
