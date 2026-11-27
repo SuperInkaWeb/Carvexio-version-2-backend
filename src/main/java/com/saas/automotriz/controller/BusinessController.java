@@ -16,6 +16,7 @@ import com.saas.automotriz.service.CloudinaryService;
 import com.saas.automotriz.service.BusinessService;
 import com.saas.automotriz.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/business")
 @RequiredArgsConstructor
+@Slf4j
 public class BusinessController {
 
     private final BusinessRepository businessRepository;
@@ -54,9 +56,9 @@ public class BusinessController {
             emailService.sendBusinessPendingApprovalEmail(user.getEmail(), saved.getName(), user.getName());
             emailService.sendNewBusinessRegistrationNoticeToAdmin(saved.getName(), user.getEmail(), user.getName());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("No se pudo enviar el correo de registro del negocio", e);
         }
-        
+
         return ResponseEntity.ok(toDTO(saved));
     }
 

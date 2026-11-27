@@ -5,7 +5,11 @@ import com.saas.automotriz.request.ReviewRequest;
 import com.saas.automotriz.model.Business;
 import com.saas.automotriz.model.Review;
 import com.saas.automotriz.model.User;
+import com.saas.automotriz.model.BookingStatus;
+import com.saas.automotriz.model.OrderStatus;
+import com.saas.automotriz.repository.BookingRepository;
 import com.saas.automotriz.repository.BusinessRepository;
+import com.saas.automotriz.repository.OrderRepository;
 import com.saas.automotriz.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,8 @@ public class ReviewController {
 
     private final ReviewRepository reviewRepository;
     private final BusinessRepository businessRepository;
+    private final BookingRepository bookingRepository;
+    private final OrderRepository orderRepository;
 
     // público - cualquiera puede ver reseñas de un negocio
     @GetMapping("/business/{businessId}")
@@ -43,6 +49,16 @@ public class ReviewController {
 
         Business business = businessRepository.findById(request.getBusinessId())
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
+
+        // Solo quien tuvo una transaccion con el negocio puede resenar (ID-010):
+        // una reserva completada o un pedido pagado/entregado.
+        boolean completoReserva = bookingRepository.findByBusinessAndClient(business, user).stream()
+                .anyMatch(b -> b.getStatus() == BookingStatus.COMPLETED);
+        boolean compro = orderRepository.findByBusinessAndClient(business, user).stream()
+                .anyMatch(o -> o.getStatus() != OrderStatus.CANCELLED && o.getStatus() != OrderStatus.PENDING);
+        if (!completoReserva && !compro) {
+            return ResponseEntity.status(403).build();
+        }
 
         // un cliente solo puede dejar una reseña por negocio
         if (reviewRepository.existsByClientAndBusiness(user, business)) {
