@@ -108,16 +108,15 @@ public class OrderController {
                 total += oi.getSubtotal();
                 orderItems.add(oi);
                 
-                // Actualizamos stock del producto
+                // Decremento atomico de stock: evita condicion de carrera / overselling (ID-005)
                 Product p = ci.getProduct();
-                if (p.getStock() < ci.getQuantity()) {
+                int stockUpdated = productRepository.decrementStock(p.getId(), ci.getQuantity());
+                if (stockUpdated == 0) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Stock insuficiente para: " + p.getName()
                                     + ". Disponible: " + p.getStock()
                                     + ", solicitado: " + ci.getQuantity() + ".");
                 }
-                p.setStock(p.getStock() - ci.getQuantity());
-                productRepository.save(p);
             }
 
             order.setTotalAmount(total);
