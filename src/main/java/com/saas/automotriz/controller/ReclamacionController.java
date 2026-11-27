@@ -9,9 +9,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/reclamaciones")
@@ -19,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 public class ReclamacionController {
 
     private static final DateTimeFormatter MAIL_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]{1,64}@[^@\\s]{1,190}\\.[^@\\s]{2,10}$");
 
     private final EmailService emailService;
     private final CloudinaryService cloudinaryService;
@@ -61,6 +65,7 @@ public class ReclamacionController {
             @RequestParam("pedido") String pedido,
             @RequestParam(value = "attachment", required = false) MultipartFile attachment
     ) {
+        validateInput(firstName, lastName1, docNumber, email, phone, summary, details);
         String fileUrl = uploadAttachment(attachment);
 
         Reclamacion reclamacion = new Reclamacion();
@@ -198,6 +203,30 @@ public class ReclamacionController {
 
     private String formatAmount(String amount) {
         return safe(amount).isBlank() ? "No especificado" : "S/. " + amount;
+    }
+
+    // Validacion basica de la entrada publica (longitudes y formato de correo)
+    // para mitigar spam/abuso. El rate limiting por IP lo aplica RateLimitFilter.
+    private void validateInput(String firstName, String lastName1, String docNumber,
+                               String email, String phone, String summary, String details) {
+        requireLen("nombre", firstName, 100);
+        requireLen("apellido", lastName1, 100);
+        requireLen("documento", docNumber, 20);
+        requireLen("telefono", phone, 20);
+        requireLen("resumen", summary, 500);
+        requireLen("detalle", details, 5000);
+        if (email == null || !EMAIL_PATTERN.matcher(email.trim()).matches()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El correo no es valido");
+        }
+    }
+
+    private void requireLen(String field, String value, int max) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El campo " + field + " es obligatorio");
+        }
+        if (value.length() > max) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El campo " + field + " es demasiado largo");
+        }
     }
 
     private String escapeHtml(String value) {
