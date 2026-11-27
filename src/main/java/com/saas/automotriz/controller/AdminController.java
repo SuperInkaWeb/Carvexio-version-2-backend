@@ -9,6 +9,7 @@ import com.saas.automotriz.model.Role;
 import com.saas.automotriz.model.User;
 import com.saas.automotriz.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,7 @@ import com.saas.automotriz.service.EmailService;
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminController {
 
     private final UserRepository userRepository;
@@ -264,7 +266,7 @@ public class AdminController {
                 emailService.sendBusinessApprovedEmail(saved.getOwner().getEmail(), saved.getName(), saved.getOwner().getName());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("No se pudo enviar el correo de notificacion al negocio", e);
         }
         
         return ResponseEntity.noContent().build();
@@ -282,7 +284,7 @@ public class AdminController {
                 emailService.sendBusinessRejectedEmail(saved.getOwner().getEmail(), saved.getName(), saved.getOwner().getName());
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("No se pudo enviar el correo de notificacion al negocio", e);
         }
         
         return ResponseEntity.noContent().build();
