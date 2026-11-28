@@ -76,13 +76,15 @@ public class BusinessDocumentService {
             throw new IllegalArgumentException("El numero de documento supera la longitud permitida");
         }
 
-        String fileUrl = cloudinaryService.uploadDocument(file);
+        CloudinaryService.UploadResult uploaded = cloudinaryService.uploadKycDocument(file);
 
         BusinessDocument document = new BusinessDocument();
         document.setBusiness(business);
         document.setDocumentType(documentType);
         document.setDocumentNumber(documentNumber);
-        document.setFileUrl(fileUrl);
+        document.setFileUrl(uploaded.secureUrl());
+        document.setPublicId(uploaded.publicId());
+        document.setResourceType(uploaded.resourceType());
 
         return toResponse(documentRepository.save(document));
     }
@@ -116,11 +118,16 @@ public class BusinessDocumentService {
     }
 
     private BusinessDocumentResponse toResponse(BusinessDocument d) {
+        // Documentos nuevos ('authenticated'): URL firmada emitida en este flujo
+        // autorizado. Documentos legacy sin public_id: su URL almacenada.
+        String url = d.getPublicId() != null
+                ? cloudinaryService.generateSignedUrl(d.getPublicId(), d.getResourceType())
+                : d.getFileUrl();
         return new BusinessDocumentResponse(
                 d.getId(),
                 d.getDocumentType(),
                 d.getDocumentNumber(),
-                d.getFileUrl(),
+                url,
                 d.getStatus(),
                 d.getCreatedAt(),
                 d.getReviewedAt()

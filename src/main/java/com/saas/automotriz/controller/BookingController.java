@@ -59,6 +59,13 @@ public class BookingController {
         }
 
         if (request.getDate() != null && request.getTime() != null) {
+            // Bloqueo pesimista del dia/slot para serializar reservas concurrentes (ID-005)
+            String dayOfWeek = request.getDate().getDayOfWeek().name();
+            if (branch != null) {
+                branchAvailabilityRepository.lockByBranchAndDayOfWeek(branch, dayOfWeek);
+            } else {
+                branchAvailabilityRepository.lockByBusinessAndDayOfWeek(service.getBusiness(), dayOfWeek);
+            }
             boolean slotAvailable = branch != null
                     ? isSlotAvailable(branch, service.getBusiness(), request.getDate(), request.getTime())
                     : isBusinessSlotAvailable(service.getBusiness(), request.getDate(), request.getTime());
