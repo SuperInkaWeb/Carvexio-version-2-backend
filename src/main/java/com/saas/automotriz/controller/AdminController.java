@@ -10,6 +10,7 @@ import com.saas.automotriz.model.User;
 import com.saas.automotriz.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import com.saas.automotriz.model.Booking;
 import com.saas.automotriz.model.BookingStatus;
 
 import com.saas.automotriz.service.EmailService;
+import com.saas.automotriz.service.AuditService;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -36,6 +38,7 @@ public class AdminController {
     private final ReviewRepository reviewRepository;
     private final com.saas.automotriz.service.Auth0ManagementService auth0ManagementService;
     private final EmailService emailService;
+    private final AuditService auditService;
 
     // KPIs globales
     @GetMapping("/dashboard")
@@ -165,12 +168,14 @@ public class AdminController {
 
     // cambiar rol de usuario
     @PutMapping("/users/{id}/role")
-    public ResponseEntity<UserDTO> changeRole(@PathVariable Long id,
+    public ResponseEntity<UserDTO> changeRole(@AuthenticationPrincipal User admin,
+                                              @PathVariable Long id,
                                               @RequestParam String role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         user.setRole(Role.valueOf(role.toUpperCase()));
         user = userRepository.save(user);
+        auditService.log(admin, "CHANGE_ROLE", "USER", id, "nuevo rol: " + role.toUpperCase());
         
         // Sincronizar el cambio de rol con Auth0 en segundo plano o de forma síncrona
         auth0ManagementService.updateUserRoleInAuth0(user.getEmail(), role.toUpperCase());
@@ -187,9 +192,10 @@ public class AdminController {
     // eliminar usuario
     // En AdminController.java
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<?> deleteUser(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         try {
             userRepository.deleteById(id);
+            auditService.log(admin, "DELETE_USER", "USER", id, null);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
             // Esto devolverá un error claro al frontend en lugar de un 403 genérico
@@ -222,8 +228,9 @@ public class AdminController {
 
     // eliminar negocio
     @DeleteMapping("/businesses/{id}")
-    public ResponseEntity<Void> deleteBusiness(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteBusiness(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         businessRepository.deleteById(id);
+        auditService.log(admin, "DELETE_BUSINESS", "BUSINESS", id, null);
         return ResponseEntity.noContent().build();
     }
 
@@ -253,11 +260,12 @@ public class AdminController {
     }
 
     @PutMapping("/businesses/{id}/approve")
-    public ResponseEntity<Void> approveBusiness(@PathVariable Long id) {
+    public ResponseEntity<Void> approveBusiness(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         Business business = businessRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
         business.setStatus(BusinessStatus.APPROVED);
         Business saved = businessRepository.save(business);
+        auditService.log(admin, "APPROVE_BUSINESS", "BUSINESS", id, null);
         
         try {
             if (saved.getOwner() != null) {
@@ -271,11 +279,12 @@ public class AdminController {
     }
 
     @PutMapping("/businesses/{id}/reject")
-    public ResponseEntity<Void> rejectBusiness(@PathVariable Long id) {
+    public ResponseEntity<Void> rejectBusiness(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         Business business = businessRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
         business.setStatus(BusinessStatus.REJECTED);
         Business saved = businessRepository.save(business);
+        auditService.log(admin, "REJECT_BUSINESS", "BUSINESS", id, null);
         
         try {
             if (saved.getOwner() != null) {
@@ -289,17 +298,19 @@ public class AdminController {
     }
 
     @PutMapping("/businesses/{id}/block")
-    public ResponseEntity<Void> blockBusiness(@PathVariable Long id) {
+    public ResponseEntity<Void> blockBusiness(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         Business business = businessRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Negocio no encontrado"));
         business.setStatus(BusinessStatus.BLOCKED);
         businessRepository.save(business);
+        auditService.log(admin, "BLOCK_BUSINESS", "BUSINESS", id, null);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/reviews/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteReview(@AuthenticationPrincipal User admin, @PathVariable Long id) {
         reviewRepository.deleteById(id);
+        auditService.log(admin, "DELETE_REVIEW", "REVIEW", id, null);
         return ResponseEntity.noContent().build();
     }
 }
