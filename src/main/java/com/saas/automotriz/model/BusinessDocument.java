@@ -33,6 +33,14 @@ public class BusinessDocument {
     @Column(name = "file_url", nullable = false, length = 500)
     private String fileUrl;
 
+    // Identificador del asset en Cloudinary, necesario para re-firmar la URL de
+    // entrega de un documento 'authenticated' (ID-004b). Nulo en docs legacy.
+    @Column(name = "public_id", length = 255)
+    private String publicId;
+
+    @Column(name = "resource_type", length = 20)
+    private String resourceType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private DocumentStatus status = DocumentStatus.PENDING;
